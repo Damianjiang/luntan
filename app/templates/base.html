@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}TCraft服务器论坛{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="{{ url_for('main.index') }}" class="nav-brand">TCraft服务器论坛</a>
+            <div class="nav-menu">
+                <a href="{{ url_for('main.index') }}" class="nav-link">首页</a>
+                {% if current_user.is_authenticated %}
+                    {% if current_user.is_banned %}
+                    <span class="nav-link banned-tag">已封禁</span>
+                    {% else %}
+                    <a href="{{ url_for('forum.create_post') }}" class="nav-link">发帖</a>
+                    {% endif %}
+                    {% if current_user.is_admin %}
+                    <a href="{{ url_for('forum.admin') }}" class="nav-link">后台</a>
+                    {% endif %}
+                    <div class="nav-user">
+                        <a href="{{ url_for('auth.profile', username=current_user.username) }}" class="nav-link">{{ current_user.username }}</a>
+                        <a href="{{ url_for('auth.logout') }}" class="nav-link">退出</a>
+                    </div>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="nav-link">登录</a>
+                    <a href="{{ url_for('auth.register') }}" class="nav-link">注册</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>TCraft服务器论坛 &copy; 2024</p>
+        </div>
+    </footer>
+</body>
+</html>

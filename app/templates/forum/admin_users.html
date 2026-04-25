@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}用户管理 - TCraft服务器论坛{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h1>用户管理</h1>
+        <a href="{{ url_for('forum.admin') }}" class="btn">返回后台</a>
+    </div>
+
+    <div class="admin-section">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>用户名</th>
+                    <th>邮箱</th>
+                    <th>状态</th>
+                    <th>帖子数</th>
+                    <th>注册时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users.items %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('auth.profile', username=user.username) }}">{{ user.username }}</a>
+                    </td>
+                    <td>{{ user.email }}</td>
+                    <td>
+                        {% if user.is_admin %}<span class="badge badge-admin">管理员</span>{% endif %}
+                        {% if user.is_banned %}<span class="badge badge-banned">已封禁</span>{% endif %}
+                        {% if not user.is_admin and not user.is_banned %}正常{% endif %}
+                    </td>
+                    <td>{{ user.posts.count() }}</td>
+                    <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td class="admin-actions">
+                        {% if not user.is_admin %}
+                        <form class="delete-form" action="{{ url_for('forum.ban_user', id=user.id) }}" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm">{{ '解封' if user.is_banned else '封禁' }}</button>
+                        </form>
+                        <form class="delete-form" action="{{ url_for('forum.delete_user', id=user.id) }}" method="POST" onsubmit="return confirm('确定要删除该用户吗？此操作不可恢复！');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-danger">删除</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not users.items %}
+                <tr><td colspan="6" class="empty-state">暂无用户</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if users.pages > 1 %}
+    <div class="pagination">
+        {% if users.has_prev %}
+        <a href="{{ url_for('forum.admin_users', page=users.prev_num) }}" class="btn">上一页</a>
+        {% endif %}
+        <span>第 {{ users.page }} 页 / 共 {{ users.pages }} 页</span>
+        {% if users.has_next %}
+        <a href="{{ url_for('forum.admin_users', page=users.next_num) }}" class="btn">下一页</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

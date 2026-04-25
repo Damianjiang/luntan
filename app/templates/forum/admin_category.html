@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}板块管理 - TCraft服务器论坛{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h1>板块管理</h1>
+        <a href="{{ url_for('forum.admin') }}" class="btn">返回后台</a>
+    </div>
+    
+    <div class="admin-form">
+        <h2>创建新板块</h2>
+        <form method="POST" action="">
+            {{ form.hidden_tag() }}
+            <div class="form-group">
+                {{ form.name.label }}
+                {{ form.name(class="form-control") }}
+            </div>
+            <div class="form-group">
+                {{ form.description.label }}
+                {{ form.description(class="form-control") }}
+            </div>
+            <div class="form-group">
+                {{ form.icon.label }}
+                {{ form.icon(class="form-control", placeholder="例如：📢") }}
+            </div>
+            {{ form.submit(class="btn btn-primary") }}
+        </form>
+    </div>
+
+    <div class="admin-section">
+        <h2>现有板块</h2>
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>图标</th>
+                    <th>名称</th>
+                    <th>描述</th>
+                    <th>帖子数</th>
+                    <th>权限</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for category in categories %}
+                <tr>
+                    <td>{{ category.icon or '📁' }}</td>
+                    <td>{{ category.name }}</td>
+                    <td>{{ category.description or '-' }}</td>
+                    <td>{{ category.post_count() }}</td>
+                    <td>
+                        {% if category.admin_only %}
+                        <span class="badge badge-admin">仅管理员</span>
+                        {% else %}
+                        <span>所有用户</span>
+                        {% endif %}
+                    </td>
+                    <td class="admin-actions">
+                        <form class="delete-form" action="{{ url_for('forum.toggle_category_admin', id=category.id) }}" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm">{{ '开放发帖' if category.admin_only else '仅管理员' }}</button>
+                        </form>
+                        <form class="delete-form" action="{{ url_for('forum.delete_category', id=category.id) }}" method="POST" onsubmit="return confirm('确定要删除该板块吗？');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-danger">删除</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not categories %}
+                <tr><td colspan="6" class="empty-state">暂无板块</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

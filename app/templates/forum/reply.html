@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}回复评论 - TCraft服务器论坛{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h1>回复评论</h1>
+    <div class="parent-comment">
+        <div class="comment-header">
+            <a href="{{ url_for('auth.profile', username=parent.author.username) }}">{{ parent.author.username }}</a>
+            <span>{{ parent.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+        </div>
+        <div class="comment-content">{{ parent.content }}</div>
+    </div>
+    <form method="POST" action="">
+        {{ form.hidden_tag() }}
+        <div class="form-group">
+            {{ form.content.label }}
+            {{ form.content(class="form-control", rows="4", placeholder="写下你的回复...") }}
+            {% for error in form.content.errors %}
+            <span class="error-message">{{ error }}</span>
+            {% endfor %}
+        </div>
+        <div class="form-actions">
+            {{ form.submit(class="btn btn-primary") }}
+            <a href="{{ url_for('forum.post', id=parent.post_id) }}" class="btn">取消</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

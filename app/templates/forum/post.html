@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}{{ post.title }} - TCraft服务器论坛{% endblock %}
+
+{% block content %}
+<div class="post-container">
+    <div class="breadcrumb">
+        <a href="{{ url_for('main.index') }}">首页</a> &gt;
+        {% if post.category %}
+        <a href="{{ url_for('forum.category', id=post.category.id) }}">{{ post.category.name }}</a> &gt;
+        {% endif %}
+        <span>{{ post.title }}</span>
+    </div>
+
+    <article class="post-detail">
+        <header class="post-header">
+            <h1>
+                {% if post.is_pinned %}<span class="badge badge-pinned">置顶</span>{% endif %}
+                {% if post.is_locked %}<span class="badge badge-locked">锁定</span>{% endif %}
+                {{ post.title }}
+            </h1>
+            <div class="post-meta">
+                <a href="{{ url_for('auth.profile', username=post.author.username) }}">{{ post.author.username }}</a>
+                <span>{{ post.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                <span>阅读 {{ post.views }}</span>
+                {% if post.updated_at != post.created_at %}
+                <span>更新于 {{ post.updated_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                {% endif %}
+            </div>
+            {% if current_user.is_authenticated %}
+            <div class="post-actions">
+                {% if post.author == current_user %}
+                <a href="{{ url_for('forum.edit_post', id=post.id) }}" class="btn btn-sm">编辑</a>
+                <form class="delete-form" action="{{ url_for('forum.delete_post', id=post.id) }}" method="POST" onsubmit="return confirm('确定要删除这篇帖子吗？');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-sm btn-danger">删除</button>
+                </form>
+                {% endif %}
+                {% if current_user.is_admin %}
+                {% if post.author != current_user %}
+                <form class="delete-form" action="{{ url_for('forum.delete_post', id=post.id) }}" method="POST" onsubmit="return confirm('确定要删除这篇帖子吗？');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-sm btn-danger">删除</button>
+                </form>
+                {% endif %}
+                <a href="{{ url_for('forum.pin_post', id=post.id) }}" class="btn btn-sm">{{ '取消置顶' if post.is_pinned else '置顶' }}</a>
+                <a href="{{ url_for('forum.lock_post', id=post.id) }}" class="btn btn-sm">{{ '解锁' if post.is_locked else '锁定' }}</a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </header>
+        <div class="post-content">
+            {{ post.content | safe }}
+        </div>
+    </article>
+
+    <section class="comments-section" id="comments">
+        <h2>评论 ({{ post.comment_count() }})</h2>
+        
+        {% if not post.is_locked and current_user.is_authenticated and not current_user.is_banned %}
+        <form method="POST" action="{{ url_for('forum.post', id=post.id) }}" class="comment-form">
+            {{ form.hidden_tag() }}
+            <div class="form-group">
+                {{ form.content(class="form-control", rows="4", placeholder="写下你的评论...") }}
+                {% for error in form.content.errors %}
+                <span class="error-message">{{ error }}</span>
+                {% endfor %}
+            </div>
+            {{ form.submit(class="btn btn-primary") }}
+        </form>
+        {% elif post.is_locked %}
+        <div class="alert alert-warning">该帖子已被锁定，无法评论</div>
+        {% elif current_user.is_banned %}
+        <div class="alert alert-danger">您已被封禁，无法评论</div>
+        {% elif not current_user.is_authenticated %}
+        <div class="alert alert-info">请 <a href="{{ url_for('auth.login') }}">登录</a> 后参与评论</div>
+        {% endif %}
+
+        <div class="comment-list">
+            {% for comment in comments.items %}
+            <div class="comment-item">
+                <div class="comment-header">
+                    <a href="{{ url_for('auth.profile', username=comment.author.username) }}" class="comment-author">{{ comment.author.username }}</a>
+                    {% if comment.author.is_banned %}<span class="badge badge-banned">已封禁</span>{% endif %}
+                    <span class="comment-time">{{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                </div>
+                <div class="comment-content">{{ comment.content }}</div>
+                <div class="comment-actions">
+                    {% if current_user.is_authenticated and not post.is_locked and not current_user.is_banned %}
+                    <a href="{{ url_for('forum.reply_comment', comment_id=comment.id) }}" class="btn btn-sm">回复</a>
+                    {% endif %}
+                    {% if current_user.is_admin %}
+                    <form class="delete-form" action="{{ url_for('forum.delete_comment', id=comment.id) }}" method="POST" onsubmit="return confirm('确定要删除这条评论吗？');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-danger">删除</button>
+                    </form>
+                    {% endif %}
+                </div>
+                {% for reply in comment.replies %}
+                <div class="comment-reply">
+                    <div class="comment-header">
+                        <a href="{{ url_for('auth.profile', username=reply.author.username) }}" class="comment-author">{{ reply.author.username }}</a>
+                        <span class="comment-time">{{ reply.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                    </div>
+                    <div class="comment-content">{{ reply.content }}</div>
+                    {% if current_user.is_admin %}
+                    <div class="comment-actions">
+                        <form class="delete-form" action="{{ url_for('forum.delete_comment', id=reply.id) }}" method="POST" onsubmit="return confirm('确定要删除这条回复吗？');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-danger">删除</button>
+                        </form>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+            {% if not comments.items %}
+            <div class="empty-state">
+                <p>暂无评论</p>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if comments.pages > 1 %}
+        <div class="pagination">
+            {% if comments.has_prev %}
+            <a href="{{ url_for('forum.post', id=post.id, page=comments.prev_num) }}#comments" class="btn">上一页</a>
+            {% endif %}
+            <span>第 {{ comments.page }} 页 / 共 {{ comments.pages }} 页</span>
+            {% if comments.has_next %}
+            <a href="{{ url_for('forum.post', id=post.id, page=comments.next_num) }}#comments" class="btn">下一页</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

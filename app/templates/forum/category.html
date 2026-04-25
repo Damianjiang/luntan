@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}{{ category.name }} - TCraft服务器论坛{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="breadcrumb">
+        <a href="{{ url_for('main.index') }}">首页</a> &gt;
+        <span>{{ category.name }}</span>
+    </div>
+    <h1>{{ category.name }}{% if category.admin_only %} <span class="badge badge-admin">仅管理员可发帖</span>{% endif %}</h1>
+    {% if category.description %}
+    <p>{{ category.description }}</p>
+    {% endif %}
+    {% if current_user.is_authenticated and not current_user.is_banned %}
+        {% if not category.admin_only or current_user.is_admin %}
+        <a href="{{ url_for('forum.create_post', category_id=category.id) }}" class="btn btn-primary">发布新帖</a>
+        {% endif %}
+    {% endif %}
+</div>
+
+<div class="post-list">
+    {% for post in posts.items %}
+    <a href="{{ url_for('forum.post', id=post.id) }}" class="post-item">
+        <div class="post-main">
+            <h3>
+                {% if post.is_pinned %}<span class="badge badge-pinned">置顶</span>{% endif %}
+                {% if post.is_locked %}<span class="badge badge-locked">锁定</span>{% endif %}
+                {{ post.title }}
+            </h3>
+            <div class="post-meta">
+                <span>{{ post.author.username }}</span>
+                <span>{{ post.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+            </div>
+        </div>
+        <div class="post-stats">
+            <span>{{ post.views }} 阅读</span>
+            <span>{{ post.comment_count() }} 评论</span>
+        </div>
+    </a>
+    {% endfor %}
+    {% if not posts.items %}
+    <div class="empty-state">
+        <p>该板块暂无帖子</p>
+        {% if current_user.is_authenticated and not current_user.is_banned %}
+            {% if not category.admin_only or current_user.is_admin %}
+            <a href="{{ url_for('forum.create_post', category_id=category.id) }}" class="btn btn-primary">发布第一篇帖子</a>
+            {% endif %}
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+{% if posts.pages > 1 %}
+<div class="pagination">
+    {% if posts.has_prev %}
+    <a href="{{ url_for('forum.category', id=category.id, page=posts.prev_num) }}" class="btn">上一页</a>
+    {% endif %}
+    <span>第 {{ posts.page }} 页 / 共 {{ posts.pages }} 页</span>
+    {% if posts.has_next %}
+    <a href="{{ url_for('forum.category', id=category.id, page=posts.next_num) }}" class="btn">下一页</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}
