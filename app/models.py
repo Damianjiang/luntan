@@ -75,3 +75,21 @@ class Comment(db.Model):
     
     def __repr__(self):
         return f'<Comment {self.id}>'
+
+class SiteConfig(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    site_name = db.Column(db.String(100), default='TCraft服务器论坛')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    @staticmethod
+    def get_config():
+        config = SiteConfig.query.first()
+        if not config:
+            config = SiteConfig()
+            db.session.add(config)
+            db.session.commit()
+        return config
+    
+    def __repr__(self):
+        return f'<SiteConfig {self.site_name}>'

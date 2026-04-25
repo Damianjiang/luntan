@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
 from config import Config
+from datetime import datetime
 
 db = SQLAlchemy()
 login_manager = LoginManager()
@@ -18,11 +19,19 @@ def create_app(config_class=Config):
     login_manager.init_app(app)
     csrf.init_app(app)
     
-    from app.models import User
+    from app.models import User, SiteConfig
     
     @login_manager.user_loader
     def load_user(id):
         return User.query.get(int(id))
+    
+    @app.context_processor
+    def inject_globals():
+        config = SiteConfig.get_config()
+        return dict(
+            site_name=config.site_name,
+            current_year=datetime.now().year
+        )
     
     from app.routes.auth import auth as auth_blueprint
     app.register_blueprint(auth_blueprint, url_prefix='/auth')

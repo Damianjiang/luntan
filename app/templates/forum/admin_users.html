@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}用户管理 - TCraft服务器论坛{% endblock %}
+{% block title %}用户管理 - {{ site_name }}{% endblock %}
 
 {% block content %}
 <div class="admin-container">
@@ -37,6 +37,10 @@
                     <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
                     <td class="admin-actions">
                         {% if not user.is_admin %}
+                        <form class="delete-form" action="{{ url_for('forum.promote_user', id=user.id) }}" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-primary">设为管理员</button>
+                        </form>
                         <form class="delete-form" action="{{ url_for('forum.ban_user', id=user.id) }}" method="POST">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <button type="submit" class="btn btn-sm">{{ '解封' if user.is_banned else '封禁' }}</button>
@@ -45,6 +49,13 @@
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <button type="submit" class="btn btn-sm btn-danger">删除</button>
                         </form>
+                        {% else %}
+                        {% if user.id != current_user.id %}
+                        <form class="delete-form" action="{{ url_for('forum.demote_user', id=user.id) }}" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-danger">取消管理员</button>
+                        </form>
+                        {% endif %}
                         {% endif %}
                     </td>
                 </tr>

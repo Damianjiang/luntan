@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from app import db
 from app.routes import forum
 from app.forms import PostForm, CommentForm, CategoryForm
-from app.models import Category, Post, Comment, User
+from app.models import Category, Post, Comment, User, SiteConfig
 from datetime import datetime, timedelta
 
 @forum.route('/category/<int:id>')
@@ -247,3 +247,49 @@ def toggle_category_admin(id):
     db.session.commit()
     flash('设置已更新', 'success')
     return redirect(url_for('forum.admin_category'))
+
+@forum.route('/admin/settings', methods=['GET', 'POST'])
+@login_required
+def admin_settings():
+    if not current_user.is_admin:
+        abort(403)
+    config = SiteConfig.get_config()
+    if request.method == 'POST':
+        site_name = request.form.get('site_name')
+        if site_name:
+            config.site_name = site_name
+            config.updated_at = datetime.utcnow()
+            db.session.commit()
+            flash('网站名称已更新', 'success')
+            return redirect(url_for('forum.admin_settings'))
+    return render_template('forum/admin_settings.html', config=config)
+
+@forum.route('/admin/promote/<int:id>', methods=['POST'])
+@login_required
+def promote_user(id):
+    if not current_user.is_admin:
+        abort(403)
+    user = User.query.get_or_404(id)
+    if user.is_admin:
+        flash('该用户已经是管理员', 'warning')
+    else:
+        user.is_admin = True
+        db.session.commit()
+        flash(f'已将 {user.username} 设为管理员', 'success')
+    return redirect(url_for('forum.admin_users'))
+
+@forum.route('/admin/demote/<int:id>', methods=['POST'])
+@login_required
+def demote_user(id):
+    if not current_user.is_admin:
+        abort(403)
+    user = User.query.get_or_404(id)
+    if not user.is_admin:
+        flash('该用户不是管理员', 'warning')
+    elif user.id == current_user.id:
+        flash('不能取消自己的管理员权限', 'danger')
+    else:
+        user.is_admin = False
+        db.session.commit()
+        flash(f'已取消 {user.username} 的管理员权限', 'success')
+    return redirect(url_for('forum.admin_users'))

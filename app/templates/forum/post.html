@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ post.title }} - TCraft服务器论坛{% endblock %}
+{% block title %}{{ post.title }} - {{ site_name }}{% endblock %}
 
 {% block content %}
 <div class="post-container">
@@ -31,18 +31,14 @@
             <div class="post-actions">
                 {% if post.author == current_user %}
                 <a href="{{ url_for('forum.edit_post', id=post.id) }}" class="btn btn-sm">编辑</a>
+                {% endif %}
+                {% if post.author == current_user or current_user.is_admin %}
                 <form class="delete-form" action="{{ url_for('forum.delete_post', id=post.id) }}" method="POST" onsubmit="return confirm('确定要删除这篇帖子吗？');">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="btn btn-sm btn-danger">删除</button>
                 </form>
                 {% endif %}
                 {% if current_user.is_admin %}
-                {% if post.author != current_user %}
-                <form class="delete-form" action="{{ url_for('forum.delete_post', id=post.id) }}" method="POST" onsubmit="return confirm('确定要删除这篇帖子吗？');">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="btn btn-sm btn-danger">删除</button>
-                </form>
-                {% endif %}
                 <a href="{{ url_for('forum.pin_post', id=post.id) }}" class="btn btn-sm">{{ '取消置顶' if post.is_pinned else '置顶' }}</a>
                 <a href="{{ url_for('forum.lock_post', id=post.id) }}" class="btn btn-sm">{{ '解锁' if post.is_locked else '锁定' }}</a>
                 {% endif %}

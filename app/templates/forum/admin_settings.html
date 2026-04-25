@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}网站设置 - {{ site_name }}{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h1>网站设置</h1>
+        <a href="{{ url_for('forum.admin') }}" class="btn">返回后台</a>
+    </div>
+
+    <div class="admin-form">
+        <h2>基本设置</h2>
+        <form method="POST" action="">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-group">
+                <label>网站名称</label>
+                <input type="text" name="site_name" class="form-control" value="{{ config.site_name }}" placeholder="请输入网站名称">
+            </div>
+            <button type="submit" class="btn btn-primary">保存设置</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
