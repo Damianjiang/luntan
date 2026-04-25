@@ -281,6 +281,7 @@ body {
 .badge-locked { background: #dc3545; color: white; }
 .badge-admin { background: #0066cc; color: white; }
 .badge-banned { background: #dc3545; color: white; }
+.badge-title { background: #6f42c1; color: white; }
 
 .btn {
     display: inline-block;

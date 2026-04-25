@@ -45,9 +45,14 @@
             </div>
             {% endif %}
         </header>
-        <div class="post-content">
+        <div class="post-content" id="post-content">
             {{ post.content | safe }}
         </div>
+        {% if post.content|length > config.content_preview_length %}
+        <div style="text-align: center; margin-top: 10px;">
+            <button class="btn btn-sm" id="expand-btn" onclick="toggleContent()">展开全文</button>
+        </div>
+        {% endif %}
     </article>
 
     <section class="comments-section" id="comments">
@@ -57,7 +62,10 @@
         <form method="POST" action="{{ url_for('forum.post', id=post.id) }}" class="comment-form">
             {{ form.hidden_tag() }}
             <div class="form-group">
-                {{ form.content(class="form-control", rows="4", placeholder="写下你的评论...") }}
+                {{ form.content(class="form-control", rows="4", placeholder="写下你的评论...", maxlength=config.max_comment_length) }}
+                <div style="text-align: right; font-size: 12px; color: #666; margin-top: 5px;">
+                    <span id="comment-char-count">0</span> / {{ config.max_comment_length }}
+                </div>
                 {% for error in form.content.errors %}
                 <span class="error-message">{{ error }}</span>
                 {% endfor %}
@@ -131,4 +139,85 @@
         {% endif %}
     </section>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 评论字数统计
+    var commentTextarea = document.querySelector('.comment-form textarea');
+    var commentCount = document.getElementById('comment-char-count');
+    if (commentTextarea && commentCount) {
+        commentTextarea.addEventListener('input', function() {
+            commentCount.textContent = this.value.length;
+            if (this.value.length > {{ config.max_comment_length }}) {
+                commentCount.style.color = '#dc3545';
+            } else {
+                commentCount.style.color = '#666';
+            }
+        });
+    }
+
+    // 帖子内容展开/折叠
+    var postContent = document.getElementById('post-content');
+    var expandBtn = document.getElementById('expand-btn');
+    if (postContent && expandBtn) {
+        var fullContent = postContent.innerHTML;
+        var previewLength = {{ config.content_preview_length }};
+        var textContent = postContent.textContent || postContent.innerText;
+        
+        if (textContent.length > previewLength) {
+            // 保存完整内容
+            postContent.setAttribute('data-full-content', fullContent);
+            
+            // 显示预览内容
+            var previewText = textContent.substring(0, previewLength) + '...';
+            postContent.innerHTML = previewText;
+            postContent.classList.add('content-collapsed');
+            
+            expandBtn.style.display = 'inline-block';
+        } else {
+            expandBtn.style.display = 'none';
+        }
+    }
+});
+
+function toggleContent() {
+    var postContent = document.getElementById('post-content');
+    var expandBtn = document.getElementById('expand-btn');
+    
+    if (postContent.classList.contains('content-collapsed')) {
+        // 展开
+        postContent.innerHTML = postContent.getAttribute('data-full-content');
+        postContent.classList.remove('content-collapsed');
+        expandBtn.textContent = '收起内容';
+    } else {
+        // 收起
+        var textContent = postContent.getAttribute('data-full-content');
+        var tempDiv = document.createElement('div');
+        tempDiv.innerHTML = textContent;
+        var plainText = tempDiv.textContent || tempDiv.innerText;
+        var previewLength = {{ config.content_preview_length }};
+        var previewText = plainText.substring(0, previewLength) + '...';
+        postContent.innerHTML = previewText;
+        postContent.classList.add('content-collapsed');
+        expandBtn.textContent = '展开全文';
+    }
+}
+</script>
+
+<style>
+.content-collapsed {
+    max-height: 200px;
+    overflow: hidden;
+    position: relative;
+}
+.content-collapsed::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 50px;
+    background: linear-gradient(transparent, white);
+}
+</style>
 {% endblock %}

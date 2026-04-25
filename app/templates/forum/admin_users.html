@@ -15,6 +15,7 @@
                 <tr>
                     <th>用户名</th>
                     <th>邮箱</th>
+                    <th>头衔</th>
                     <th>状态</th>
                     <th>帖子数</th>
                     <th>注册时间</th>
@@ -28,6 +29,7 @@
                         <a href="{{ url_for('auth.profile', username=user.username) }}">{{ user.username }}</a>
                     </td>
                     <td>{{ user.email }}</td>
+                    <td>{{ user.title or '-' }}</td>
                     <td>
                         {% if user.is_admin %}<span class="badge badge-admin">管理员</span>{% endif %}
                         {% if user.is_banned %}<span class="badge badge-banned">已封禁</span>{% endif %}
@@ -36,6 +38,13 @@
                     <td>{{ user.posts.count() }}</td>
                     <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
                     <td class="admin-actions">
+                        {% if allow_set_title %}
+                        <form class="delete-form" action="{{ url_for('forum.set_user_title', id=user.id) }}" method="POST" style="display: flex; gap: 5px;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="text" name="title" class="form-control" style="width: 80px; padding: 4px 8px; font-size: 12px;" value="{{ user.title or '' }}" placeholder="头衔">
+                            <button type="submit" class="btn btn-sm">设置</button>
+                        </form>
+                        {% endif %}
                         {% if not user.is_admin %}
                         <form class="delete-form" action="{{ url_for('forum.promote_user', id=user.id) }}" method="POST">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -61,7 +70,7 @@
                 </tr>
                 {% endfor %}
                 {% if not users.items %}
-                <tr><td colspan="6" class="empty-state">暂无用户</td></tr>
+                <tr><td colspan="7" class="empty-state">暂无用户</td></tr>
                 {% endif %}
             </tbody>
         </table>
